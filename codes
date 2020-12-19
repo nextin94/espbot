@@ -1,0 +1,415 @@
+<?php
+/*===============================================
+Потключить ошибку Hatolarni boglash
+===============================================*/
+
+error_reporting(E_ALL);
+ini_set('display_error', 'on');
+
+/* ==============================================
+ * Потключить MySqli va PhpAdmini ulash
+=================================================*/
+
+$host       = 'localhost';
+$name       = 'nextin_boteps';
+$password   = '*******';
+$db_name    = 'nextin_boteps';
+
+$link = mysqli_connect($host, $name, $password, $db_name);
+
+$query = 'SELECT * FROM botesp WHERE id > 0';
+
+	$result = mysqli_query($link, $query) or die(mysqli_error($link));
+
+	for ($data = []; $row = mysqli_fetch_assoc($result); $data[] = $row);
+
+	
+	// $addName     = 'Muxlisa';
+	// $addSurname  = 'Malikova';
+	// $addEmail    = "******";
+	// $addPhone    = "+*****";
+
+
+// $add = "INSERT INTO botesp SET name='Muxlisa' , surname='Malikova' , email='muxlis@mai.ru' , phone='+9989012345678' ";
+// 	mysqli_query($link, $add) or die(mysqli_error($link));
+
+
+
+/* ==============================================
+Токен и функция для метод сенд месседж Tokeni boglimiz
+va sendMessage uchun funksiya yasimiz
+=================================================*/
+//1149464701:AAG3jX51IuG2npZI1PPtnW_xGfMy5wbJjr8
+// Токену берем на константу с именем 'API KEY'
+define('API_KEY', '1149464701:AAG3jX51IuG2npZI1PPtnW_xGfMy5wbJjr8');
+// Функция выполняет обработка методов
+	function botEPS($method, $datas=[]) {
+		$url = "https://api.telegram.org/bot".API_KEY."/".$method;
+		$ch  = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $datas);
+		$res = curl_exec($ch);
+
+			if (curl_error($ch)) {
+				var_dump(curl_error($ch));
+			} else {
+				return json_decode($res);
+			}
+	}
+
+// Typing ботга смс йозганда жавоб учун чикадиган яний печатает...
+	function typing($ch) {
+		return botEPS('sendChatAction', [
+			'chat_id'   => $ch,
+			'action'    => 'typing',
+		]);
+	}
+
+
+/*===============================================
+Функции для регистрации Регистрация учун функциялар
+=================================================*/
+//Userdan olingan malumotlarni o'chirib tashlaydigan funksiya
+//Функция удаляет то что вводит ползователь
+	function del($chatID) {
+		unlink("step/$chatID.menu");
+		unlink("step/$chatID.step");
+		unlink("step/$chatID.txt");
+	}
+
+// Bu funksiya step papkadan step nomli fayl ochadi va unga qiymat berib ketadi
+//Это функция в папке step создает файл в формате step со сначением
+	function pstep($chatID, $svalue) {
+		file_put_contents("step/$chatID.step", $svalue);
+	}
+
+// Bu funksiya menu papkadan step nomli fayl ochadi va unga qiymat berib ketadi
+//Это функция в папке menu создает файл в формате menu со сначением
+	function pmenu($chatID, $mvalue) {
+		file_put_contents("step/$chatID.menu", $mvalue);
+	}
+
+//Bu funksiya owa step ochilgan fayldagi qiymatni bittaga owirib boradi
+//Финкция умножает степа не 1 ку
+	function step($chatID) {
+		$step = file_get_contents("step/$chatID.step");
+		$step += 1;
+		file_put_contents("step/$chatID.step", $step);
+	}
+
+//ДЛя назад
+// Orqaga qaytish uchun funkisiya yaniy stepdan 1 ta kamaytiradi
+	function minustep($chatID) {
+		$step = file_get_contents("step/$chatID.step");
+		$step -= 1;
+		file_put_contents("step/$chatID.step", $step);
+	}
+
+//Bu funksiya userdan kelgan smslarni yigib boradi
+//Это функыия собираеть смски от пользователя
+	function sendTXT($chatID, $TXT) {
+		$step = file_get_contents("step/$chatID.txt");
+		file_put_contents("step/$chatID.txt", "$step\n$TXT");
+	}
+
+//
+//
+	function ACL($callbackQueryId, $text=null, $showAlert = false) {
+		return bot('answerCallbackQuery', [
+			'callback_query_id' => $callbackQueryId,
+			'text' => $text,
+			'show_alert' => $showAlert,
+		]);
+	}
+
+
+/*========================================================
+ Фуекциялар аддрес учун Addresses
+==========================================================*/
+
+$update = json_decode(file_get_contents('php://input'));
+	$message       = $update->message;
+	$chatID        = $message->chat->id;
+	$MChatType     = $message->chat->type;
+	$messageID     = $message->message_id;
+	$name          = $message->chat->first_name;
+	$Uname         = $message->from->username;
+	$messageTXT    = $message->text;
+	$callback      = $update->callback_query;
+	$callimID      = $callback->inline_message_id;
+	$callmessage   = $callback->message;
+	$callmessageID = $callmessage->message_id;
+	$callmessageTXT= $callmessage->text;
+	$callMChatID   = $callback->message->chat->id;
+	$callFromID    = $callback->from->id;
+	$callFromUname = $callback->from->username;
+	$callData      = $callback->data;
+	$callID        = $callback->id;
+	$call_queryID  = $update->callback_query->id;
+	$callChat_ins  = $callback->chat_instance;
+	$callMChatType = $callback->message->chat->type;
+	$step          = file_get_contents("step/$chatID.step");
+	$menu          = file_get_contents("step/$chatID.menu");
+	$stepe         = file_get_contents("step/$callFromID.step");
+	$menue         = file_get_contents("step/$callFromID.menu");
+	$sendMess      = file_get_contents("step/$chatID.txt");
+ 	mkdir("step");
+
+
+/*================================================================
+Keyboards         Klaishlar        Клавиши
+==================================================================*/
+
+//Клавиши для главная
+//Asosiy saxifani knopkalari
+$keyboards = json_encode([
+	'resize_keyboard' => true,
+	'keyboard' => [
+		[['text' => "Буюртма бериш\n(Заказать курьера)"],],
+		[['text' => "Биз хақимизда\n(О нас)"], ['text' => "Мулоқат ўрнатиш\n(Обратная связь)"]],
+		[['text' => "Манзилимиз\n(Наш адрес)"], ['text' => "Рўйхатдан ўтиш\n(Регистрация)"],],
+	]
+]);
+
+
+//Отменить
+//Bekor qilish
+$cencle = json_encode([
+	'resize_keyboard' => true,
+	'keyboard' => [
+		[['text' => "Бекор килиш\n(Отменить)"],],
+	]
+]);
+
+//Добавить адрес
+//Manzil qoshish va yuborish
+$address = json_encode([
+	'resize_keyboard' => true,
+	'keyboard' => [
+		[['text' => "Асосий сахифа\n(Главная)"],['text' => "Буюртмани юбориш\n(Отправить заказ)"],],
+	]
+]);
+
+
+
+
+/*==================================================================
+Тайпинг фуексияси ишлатамиз
+====================================================================*/
+	if (isset($messageTXT)) {
+		typing($chatID);
+	}
+
+/*===================================================================
+Батнлани ишлатамиз
+======================================================================*/
+
+// Start Стврт
+
+	if ($messageTXT == "/start")  {
+		botEPS('sendMessage', [
+			'chat_id' => $chatID,
+			'text'    => "Ассалому Алайкум $name!",
+			'parse_mode' => 'markdown',
+			'reply_markup' => $keyboards,
+		]);
+	}
+
+// Home Главная страницы
+
+	if ($messageTXT == "/home") {
+		botEPS('sendMessage', [
+			'chat_id'      => $chatID,
+			'text'         => "“ЭКСПРЕСС ПОЧТА СИРДАРЁ” МЧЖ",
+			'parse_mode'   => 'markdown',
+			'reply_markup' => $keyboards,
+  		]);
+	}
+
+
+/*===============================================================
+Буюртма бериш (Заказать курьера)
+===============================================================*/
+
+	if ($messageTXT == "Буюртма бериш\n(Заказать курьера)") {
+		botEPS('sendMessage', [
+			'chat_id'      => $chatID,
+			'text'         => "<b>- Олиб кетиш манзили ва телефони ёзинг:</b>\n<u>Масалан:</u><i>Гулистон ш. \"Сайкал\" махалласи Ёшлик кўчаси 56. тел. 90 255-33-83</i>",
+			'parse_mode'   => 'html',
+			'reply_markup' => $cencle,
+		]);
+		pstep($chatID, "0");
+		pmenu($chatID, "buyurtma");
+	}
+
+	if ($step == "0" and $menu == "buyurtma") {
+		if ($messageTXT == "Бекор килиш\n(Отменить)") {
+			del($chatID);
+
+			botEPS('sendMessage', [
+				'chat_id'        => $chatID,
+				'text'           => 'Сиз буюртмани бекор килдингиз ва асасий сахифага кайтингиз',
+				'parse_mode'     => 'html',
+				'reply_markup'   => $keyboards,
+			]);
+		} else {
+			botEPS('sendMessage', [
+				'chat_id'        => $chatID,
+				'text'           => "<b>-Етказиб бериш манзили ва телефони ёзинг:</b>\n<u>Масалан:</u><i> Гулистон ш. \"Сайкал\" махалласи Ёшлик кўчаси 56. тел. 90 255-33-83</i>",
+				'parse_mode'     => 'html',
+				'reply_markup'   => $cencle,
+			]);
+			sendTXT($chatID, "📍Олиб кетиш манзили: ".$messageTXT);
+			step($chatID);
+		}
+	}
+
+
+	if ($step == "1" and $menu == "buyurtma") {
+		if ($messageTXT == "Бекор килиш\n(Отменить)") {
+			del($chatID);
+
+			botEPS('sendMessage', [
+				'chat_id'        => $chatID,
+				'text'           => 'Сиз буюртмани бекор килдингиз ва асасий сахифага кайтингиз',
+				'parse_mode'     => 'html',
+				'reply_markup'   => $keyboards,
+			]);
+		} else {
+			botEPS('sendMessage', [
+				'chat_id'        => $chatID,
+				'text'           => "<b>Почта юкининг тури ва унинг улчамлари: </b><u>Masalan: </u><i>Xat va xujjatlar A4</i>",
+				'parse_mode'     => 'html',
+				'reply_markup'   => $cencle,
+			]);
+			sendTXT($chatID, "📍Етказиб бериш манзили: ".$messageTXT);
+			step($chatID);
+		}
+	}
+
+	if ($step == "2" and $menu == "buyurtma") {
+		if ($messageTXT == "Бекор килиш\n(Отменить)") {
+			del($chatID);
+
+			botEPS('sendMessage', [
+				'chat_id'        => $chatID,
+				'text'           => 'Сиз буюртмани бекор килдингиз ва асасий сахифага кайтингиз',
+				'parse_mode'     => 'html',
+				'reply_markup'   => $keyboards,
+			]);
+		} else {
+			botEPS('sendMessage', [
+				'chat_id'        => $chatID,
+				'text'           => "<b>Сизнинг буюртмангиз кабул килинди!\nБуюртмани юборишингиз мумкин</b>",
+				'parse_mode'     => 'html',
+				'reply_markup'   => $address,
+			]);
+			sendTXT($chatID, "📦Почта юкининг тури ва унинг улчамлари: ".$messageTXT);
+			step($chatID);
+		}
+	}
+
+
+	if ($messageTXT == "Асосий сахифа\n(Главная)") {
+		del($chatID);
+
+		botEPS('sendMessage', [
+			'chat_id'            => $chatID,
+			'text'               => "Сиз буюртмани бекор килдингиз ва асасий сахифага кайтингиз" ,
+			'parse_mode'         => 'html',
+			'reply_markup'       => $keyboards,
+		]);
+	}
+
+
+	if ($messageTXT == "Буюртмани юбориш\n(Отправить заказ)") {
+		botEPS('sendMessage', [
+			'chat_id'       => '-1001448501379',
+			'text'          => "$name нинг буюртмаси\n$sendMess",
+			'parse_mode'    => 'markdown',
+	    ]);
+
+	    del($chatID);
+
+		botEPS('sendMessage', [
+			'chat_id'        => $chatID,
+			'text'           => "Сизнинг буюртмангиз юборилди ва сиз асосий сахифага кайтингиз",
+			'parse_mode'     => 'html',
+			'reply_markup'   => $keyboards,
+		]);
+
+	}
+//Chat ID kuryerlar o'tiradigan gruppaniki
+// Чат айди каторая привазян куреров
+// -1001448501379
+
+
+/*===============================================================
+Биз хақимизда (О нас)
+===============================================================*/
+
+	if ($messageTXT == "Биз хақимизда\n(О нас)") {
+		botEPS('sendMessage', [
+			'chat_id'       => $chatID,
+			'text'          => "«Экспресс почта Сирдарё» МЧЖ\nХат, хужжат ва юкларни етказиб берувчилар тизилмаси.",
+			'parse_mode'    => 'markdown',
+			// 'reply_markup'  => $exit, Мы убрали точнее откючили клавиш кайтиш
+		]);
+	}
+
+/*===============================================================
+Манзилимиз (Наш адрес)
+===============================================================*/
+
+	if ($messageTXT == "Манзилимиз\n(Наш адрес)") {
+		botEPS('sendLocation', [
+			'chat_id'       => $chatID,
+			'latitude'      => 40.503434,
+			'longitude'     => 68.778324,
+		]);
+	}
+
+		if ($messageTXT == "Манзилимиз\n(Наш адрес)") {
+		botEPS('sendMessage', [
+			'chat_id'       => $chatID,
+			'text'          => "<b>120 100</b> Сирдарё вилояти Гулистон шахри. Ёшлик кўчаси 56 (7-мактаб ёни)",
+			'parse_mode'    => 'html',
+		]);
+	}
+
+/*===============================================================
+Мулоқат ўрнатиш (Обратная связь)
+===============================================================*/
+
+	if ($messageTXT == "Мулоқат ўрнатиш\n(Обратная связь)") {
+		botEPS('sendContact', [
+			'chat_id'       => $chatID,
+			'phone_number'  => '+99867 225 56 66',
+			'first_name'    => 'Офис',
+		]);
+	}
+
+		if ($messageTXT == "Мулоқат ўрнатиш\n(Обратная связь)") {
+		botEPS('sendContact', [
+			'chat_id'       => $chatID,
+			'phone_number'  => '+99893 324 56 66',
+			'first_name'    => 'Мобильный',
+		]);
+	}
+
+/*=======================================================
+Регистрация Ro'yxatdan o'tish
+=======================================================*/
+
+
+if ($messageTXT == "rasm") {
+	botEPS('sendPhoto', [
+		'chat_id' => $chatID,
+		'photo'   => "https://farshoh.uz/nextinuzbotphoto/nextinuzbot.jpg",
+	]);
+}
+
+
+
+?>
